@@ -29,7 +29,7 @@ end)
 -- 2. UI CREATION (100x Good UI)
 -- ==========================================
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "ProFruitTP"
+ScreenGui.Name = "GrowAGardenHack"
 ScreenGui.ResetOnSpawn = false
 
 -- Use CoreGui if exploiting, otherwise PlayerGui
@@ -55,26 +55,50 @@ UIStroke.Parent = MainFrame
 
 -- Title
 local Title = Instance.new("TextLabel")
-Title.Size = UDim2.new(1, -40, 0, 40)
+Title.Size = UDim2.new(1, -70, 0, 30)
 Title.Position = UDim2.new(0, 15, 0, 5)
 Title.BackgroundTransparency = 1
-Title.Text = "🍎 Pro Fruit Auto-TP"
+Title.Text = "🌱 Grow a Garden 2 hack"
 Title.TextColor3 = Color3.fromRGB(255, 255, 255)
-Title.TextSize = 20
+Title.TextSize = 18
 Title.Font = Enum.Font.GothamBold
 Title.TextXAlignment = Enum.TextXAlignment.Left
 Title.Parent = MainFrame
 
+-- Credit Label
+local Credit = Instance.new("TextLabel")
+Credit.Size = UDim2.new(1, -40, 0, 15)
+Credit.Position = UDim2.new(0, 15, 0, 30)
+Credit.BackgroundTransparency = 1
+Credit.Text = "made by leo1333877"
+Credit.TextColor3 = Color3.fromRGB(150, 150, 170)
+Credit.TextSize = 12
+Credit.Font = Enum.Font.GothamMedium
+Credit.TextXAlignment = Enum.TextXAlignment.Left
+Credit.Parent = MainFrame
+
 -- Status Light
 local StatusLight = Instance.new("Frame")
 StatusLight.Size = UDim2.new(0, 14, 0, 14)
-StatusLight.Position = UDim2.new(1, -25, 0.5, -7)
+StatusLight.Position = UDim2.new(1, -15, 0.5, 0)
 StatusLight.BackgroundColor3 = Color3.fromRGB(255, 60, 60) -- Red initially
 StatusLight.Parent = Title
 
 local LightCorner = Instance.new("UICorner")
 LightCorner.CornerRadius = UDim.new(1, 0)
 LightCorner.Parent = StatusLight
+
+-- Close (X) Button
+local CloseBtn = Instance.new("TextButton")
+CloseBtn.Size = UDim2.new(0, 26, 0, 26)
+CloseBtn.Position = UDim2.new(1, -36, 0, 10)
+CloseBtn.BackgroundColor3 = Color3.fromRGB(220, 50, 50)
+CloseBtn.Text = "X"
+CloseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
+CloseBtn.Font = Enum.Font.GothamBold
+CloseBtn.TextSize = 14
+CloseBtn.Parent = MainFrame
+Instance.new("UICorner", CloseBtn).CornerRadius = UDim.new(0, 6)
 
 -- Set Location Button
 local SetLocBtn = Instance.new("TextButton")
@@ -148,6 +172,7 @@ local function addHoverEffect(btn, originalColor, hoverColor)
 end
 addHoverEffect(SetLocBtn, Color3.fromRGB(88, 101, 242), Color3.fromRGB(100, 115, 255))
 addHoverEffect(ToggleBtn, Color3.fromRGB(40, 40, 50), Color3.fromRGB(60, 60, 75))
+addHoverEffect(CloseBtn, Color3.fromRGB(220, 50, 50), Color3.fromRGB(255, 75, 75))
 
 -- ==========================================
 -- 3. LOGIC & TELEPORTATION
@@ -155,7 +180,6 @@ addHoverEffect(ToggleBtn, Color3.fromRGB(40, 40, 50), Color3.fromRGB(60, 60, 75)
 
 -- Function: Quick scan of ONLY the active Fruits folders (No Lag!)
 local function fastRescanFruits()
-	-- Create a quick lookup of items we already know about
 	local knownItems = {}
 	for _, data in ipairs(fruitsData) do
 		if data.Item and data.Item.Parent then
@@ -163,7 +187,6 @@ local function fastRescanFruits()
 		end
 	end
 
-	-- Scan only inside valid Fruits folders
 	for folder, _ in pairs(knownFruitsFolders) do
 		if folder and folder.Parent then
 			for _, item in pairs(folder:GetDescendants()) do
@@ -181,7 +204,7 @@ local function fastRescanFruits()
 				end
 			end
 		else
-			knownFruitsFolders[folder] = nil -- Cleanup deleted folders
+			knownFruitsFolders[folder] = nil
 		end
 	end
 end
@@ -238,12 +261,22 @@ ToggleBtn.MouseButton1Click:Connect(function()
 	end
 end)
 
+-- Button: Close GUI (X Button)
+CloseBtn.MouseButton1Click:Connect(function()
+	isToggled = false
+	moveFruits(nil, true) -- Send fruits back so game isn't broken for you
+	ScreenGui:Destroy()   -- Completely removes the GUI
+end)
+
 -- Background 1-Second Loop
 task.spawn(function()
 	while true do
+		-- If GUI was destroyed, break the loop to save performance
+		if not ScreenGui.Parent then break end 
+		
 		if isToggled and targetCFrame then
-			fastRescanFruits()   -- Registers newly spawned fruits without lagging
-			moveFruits(targetCFrame, false) -- Moves them all to your set location
+			fastRescanFruits()
+			moveFruits(targetCFrame, false)
 		end
 		task.wait(1)
 	end
