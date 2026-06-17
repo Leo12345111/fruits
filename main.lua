@@ -11,6 +11,7 @@ local fruitsData = {}
 local knownFruitsFolders = {}
 local ignoredPlot = nil
 local isToggled = false
+local skyTpDistance = 100 -- Default distance
 
 -- Find existing Fruits folders
 for _, obj in pairs(workspace:GetDescendants()) do
@@ -30,7 +31,7 @@ end)
 -- 2. PREMIUM UI CREATION (100x Better UI)
 -- ==========================================
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "GrowAGardenHackV2"
+ScreenGui.Name = "GrowAGardenHackV3"
 ScreenGui.ResetOnSpawn = false
 
 -- Use CoreGui if exploiting, otherwise PlayerGui
@@ -38,8 +39,8 @@ local success = pcall(function() ScreenGui.Parent = CoreGui end)
 if not success then ScreenGui.Parent = player:WaitForChild("PlayerGui") end
 
 local MainFrame = Instance.new("Frame")
-MainFrame.Size = UDim2.new(0, 340, 0, 280)
-MainFrame.Position = UDim2.new(0.5, -170, 0.5, -140)
+MainFrame.Size = UDim2.new(0, 340, 0, 320)
+MainFrame.Position = UDim2.new(0.5, -170, 0.5, -160)
 MainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
 MainFrame.BorderSizePixel = 0
 MainFrame.Active = true
@@ -122,10 +123,43 @@ TPBaseBtn.TextSize = 14
 TPBaseBtn.Parent = MainFrame
 Instance.new("UICorner", TPBaseBtn).CornerRadius = UDim.new(0, 8)
 
+-- Custom Distance Text Box (Editable)
+local DistanceBox = Instance.new("TextBox")
+DistanceBox.Size = UDim2.new(0.9, 0, 0, 35)
+DistanceBox.Position = UDim2.new(0.05, 0, 0, 155)
+DistanceBox.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+DistanceBox.TextEditable = true
+DistanceBox.ClearTextOnFocus = false
+DistanceBox.PlaceholderText = "Enter Height (Studs)"
+DistanceBox.Text = tostring(skyTpDistance)
+DistanceBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+DistanceBox.Font = Enum.Font.GothamBold
+DistanceBox.TextSize = 13
+DistanceBox.Parent = MainFrame
+Instance.new("UICorner", DistanceBox).CornerRadius = UDim.new(0, 8)
+Instance.new("UIStroke", DistanceBox).Color = Color3.fromRGB(88, 101, 242)
+
+-- Label inside DistanceBox for context
+local DistLabel = Instance.new("TextLabel")
+DistLabel.Size = UDim2.new(0.4, 0, 1, 0)
+DistLabel.Position = UDim2.new(0, 10, 0, 0)
+DistLabel.BackgroundTransparency = 1
+DistLabel.Text = "TP Height:"
+DistLabel.TextColor3 = Color3.fromRGB(180, 180, 180)
+DistLabel.Font = Enum.Font.GothamMedium
+DistLabel.TextSize = 13
+DistLabel.TextXAlignment = Enum.TextXAlignment.Left
+DistLabel.Parent = DistanceBox
+
+-- Push the actual input text to the right
+DistanceBox.TextXAlignment = Enum.TextXAlignment.Right
+local Padding = Instance.new("UIPadding", DistanceBox)
+Padding.PaddingRight = UDim.new(0, 15)
+
 -- Info Box
 local InfoBox = Instance.new("TextBox")
 InfoBox.Size = UDim2.new(0.9, 0, 0, 35)
-InfoBox.Position = UDim2.new(0.05, 0, 0, 155)
+InfoBox.Position = UDim2.new(0.05, 0, 0, 197)
 InfoBox.BackgroundColor3 = Color3.fromRGB(15, 15, 20)
 InfoBox.TextEditable = false
 InfoBox.ClearTextOnFocus = false
@@ -140,9 +174,9 @@ Instance.new("UIStroke", InfoBox).Color = Color3.fromRGB(50, 50, 65)
 -- Toggle Sky-TP Button
 local ToggleBtn = Instance.new("TextButton")
 ToggleBtn.Size = UDim2.new(0.9, 0, 0, 45)
-ToggleBtn.Position = UDim2.new(0.05, 0, 0, 210)
+ToggleBtn.Position = UDim2.new(0.05, 0, 0, 250)
 ToggleBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
-ToggleBtn.Text = "START SKY-TP (300 STUDS)"
+ToggleBtn.Text = "START SKY-TP (" .. skyTpDistance .. " STUDS)"
 ToggleBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
 ToggleBtn.Font = Enum.Font.GothamBlack
 ToggleBtn.TextSize = 15
@@ -196,6 +230,20 @@ applyPremiumAnimations(CloseBtn, Color3.fromRGB(220, 50, 50), Color3.fromRGB(255
 -- 3. LOGIC & TELEPORTATION
 -- ==========================================
 
+-- Handle Distance Updates safely
+DistanceBox.FocusLost:Connect(function()
+	local newDist = tonumber(DistanceBox.Text)
+	if newDist then
+		skyTpDistance = newDist
+		if not isToggled then
+			ToggleBtn.Text = "START SKY-TP (" .. skyTpDistance .. " STUDS)"
+		end
+	else
+		-- If they typed letters by mistake, revert to the last valid number
+		DistanceBox.Text = tostring(skyTpDistance)
+	end
+end)
+
 -- Function: Get Plot Center
 local function getPlotPosition(plot)
 	if plot:IsA("Model") and plot.PrimaryPart then
@@ -245,9 +293,9 @@ local function moveFruits(isActive)
 			-- IGNORE FRUITS IN SCANNED PLOT
 			if ignoredPlot and data.Item:IsDescendantOf(ignoredPlot) then continue end
 
-			-- Teleport 300 studs UP from original location if active
+			-- Teleport UP based on custom text box distance
 			local dest = data.OriginalCFrame
-			if isActive then dest = dest + Vector3.new(0, 100, 0) end
+			if isActive then dest = dest + Vector3.new(0, skyTpDistance, 0) end
 
 			if dest then
 				if data.Type == "Model" then
@@ -327,7 +375,7 @@ ToggleBtn.MouseButton1Click:Connect(function()
 		TweenService:Create(ToggleBtn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(220, 50, 50)}):Play()
 	else
 		StatusLight.BackgroundColor3 = Color3.fromRGB(255, 60, 60)
-		ToggleBtn.Text = "START SKY-TP (300 STUDS)"
+		ToggleBtn.Text = "START SKY-TP (" .. skyTpDistance .. " STUDS)"
 		TweenService:Create(ToggleBtn, TweenInfo.new(0.2), {BackgroundColor3 = Color3.fromRGB(40, 40, 50)}):Play()
 		moveFruits(false) 
 	end
